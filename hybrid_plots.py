@@ -85,8 +85,6 @@ def plot_hybrid(t, x, q, q_t, p, y_ref=None, n_ref=500):
         ax.plot(x[mask, S.X], x[mask, S.Y], color=colors[m], lw=1.5)
 
     ax.plot(x[0, S.X], x[0, S.Y], "ko", ms=6)
-    if Mode.SAVING in present:
-        ax.plot(x[-1, S.X_S], x[-1, S.Y_S], "kx", ms=9, mew=2)
 
     handles = [Line2D([], [], color=colors[m], lw=2, label=m.name) for m in present]
     handles += [

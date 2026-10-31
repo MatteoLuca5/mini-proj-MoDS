@@ -16,7 +16,7 @@ class Params:
     mu_r = 2e-9
     mu_l_x = 1e-5
     mu_l_y = 1e-5
-    t_fin = 50
+    t_fin = 100
     L_n = 1e-3
     C_n = 1e-6
     R_n = 10.0
@@ -32,7 +32,7 @@ class Params:
     T_plate = 80.0
     T_fill = 200.0
     new_fil_amount = 5
-    alpha = 0.4
+    alpha = 0.7
     t_c = 2
     t_saving = 0.5
     t_wipe = 0.2
@@ -67,7 +67,6 @@ class S(IntEnum):
     IN = 6; VC = 7; TN = 8;
     FIL = 9;
     PROG = 10;
-    X_S = 11; Y_S = 12;
     TIME = 13; ELAPSED_TIME = 14;
 
 class U(IntEnum):
