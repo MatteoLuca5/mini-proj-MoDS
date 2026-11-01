@@ -2,6 +2,7 @@ import jax, jax.numpy as jnp
 from utils import *
 from system_control import open_loop_control
 from guards import make_events
+from automaton import M, O, Automaton
 import scipy.integrate as spintg
 
 def simulate_hybrid_system(p: Params, A, B, C, CAAB, CAAA, sys, t_start, t_fin, y, max_events = 100):
@@ -11,7 +12,7 @@ def simulate_hybrid_system(p: Params, A, B, C, CAAB, CAAA, sys, t_start, t_fin, 
     const_temp_input = np.sqrt(p.R_n / p.R_t_n * (200 - p.T_env)) # Steady state input needed to maintain 200
 
     q_t = [t_start]
-    q = [Q(Mode.PRINTING)]
+    q = [Q(Mode.PRINTING, Automaton(0))]
 
     initial_nozzle = [
         (1/p.R_n) * const_temp_input,
@@ -47,7 +48,7 @@ def simulate_hybrid_system(p: Params, A, B, C, CAAB, CAAA, sys, t_start, t_fin, 
     u_straight = jax.jit(u_straight)
 
 
-    x0 = np.concatenate((p0, initial_nozzle, [p.new_fil_amount, 0, 0, 0, 0, 0]))
+    x0 = np.concatenate((p0, initial_nozzle, [p.new_fil_amount, 0, 0, 0]))
     x = [x0]
     print(x)
 
@@ -55,8 +56,11 @@ def simulate_hybrid_system(p: Params, A, B, C, CAAB, CAAA, sys, t_start, t_fin, 
         match q.mode:
             case Mode.PRINTING:
                 return np.append(np.asarray([u_print(x[S.PROG])]), const_temp_input)
-            case Mode.MOVING | Mode.MOVING_X0 | Mode.MOVING_XD | Mode.MOVING_Y0 | Mode.MOVING_YD:
-                return [-10, -10, const_temp_input]
+            case Mode.MOVING:
+                if q.automaton.command == M.V:
+                    return [0, -10, const_temp_input]
+                else:
+                    return [-10, 0, const_temp_input]
             case Mode.MOVING_BACK:
                 return np.append(np.asarray([u_straight(x[S.ELAPSED_TIME], 0, 0, x[S.PROG], p.t_return)]), const_temp_input)
             case Mode.HEAT_OFF | Mode.LOADING:
@@ -86,7 +90,8 @@ def simulate_hybrid_system(p: Params, A, B, C, CAAB, CAAA, sys, t_start, t_fin, 
             t_event = sol.t_events[hit[0]][0]
             x_event = sol.y_events[hit[0]][0]
             new_x = events[hit[0]].reset(x_event.copy(), current_q, p)
-            new_q = Q(events[hit[0]].target)
+            target = events[hit[0]].target
+            new_q = target if isinstance(target, Q) else Q(target) # automatically put whatever is returned in a Q if isnt a Q already (see guards.py)
 
             t.extend(sol.t[sol.t < t_event])
             x.extend(sol.y.T[sol.t < t_event])

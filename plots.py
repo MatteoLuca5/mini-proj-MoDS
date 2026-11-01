@@ -111,7 +111,7 @@ def plot_q16_over_time(T, num_blocks, num_timesteps, r, dt, p, step=20):
         return sc, title
 
     an = animation.FuncAnimation(fig, update, frames=range(0, num_timesteps, step),
-                                  interval=30, blit=False, repeat=True)
+                                  interval=30, blit=False, repeat=False)
 
     plt.show()
     

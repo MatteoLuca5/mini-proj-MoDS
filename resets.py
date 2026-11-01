@@ -15,6 +15,7 @@ def reset_hit_x0(x, q, p):
     new_state = x.copy()
     new_state[S.X] = 0 # To not phase through walls due to numerical calculations
     new_state[S.DX] = 0
+    new_state[S.ELAPSED_TIME] = 0
 
     return new_state
 
@@ -22,6 +23,7 @@ def reset_hit_y0(x, q, p):
     new_state = x.copy()
     new_state[S.Y] = 0
     new_state[S.DY] = 0
+    new_state[S.ELAPSED_TIME] = 0
 
     return new_state
 

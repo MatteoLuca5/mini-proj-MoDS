@@ -3,10 +3,11 @@ import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from matplotlib.patches import Rectangle, Patch
 from matplotlib.collections import LineCollection
+from automaton import Automaton
 
 from utils import S, Mode
 
-
+# How long a state has been in vigor for
 def mode_segments(t, q, q_t):
     modes = [qq.mode for qq in q]
     segments = []
@@ -82,7 +83,7 @@ def plot_hybrid(t, x, q, q_t, p, y_ref=None, n_ref=500):
 
     for t0, t1, m in segments:
         mask = (t >= t0) & (t <= t1)
-        ax.plot(x[mask, S.X], x[mask, S.Y], color=colors[m], lw=1.5)
+        ax.plot(x[mask, S.X], x[mask, S.Y], color=colors[m], lw=1.5) # plotting state segments (active state = horizontal colored block)
 
     ax.plot(x[0, S.X], x[0, S.Y], "ko", ms=6)
 
@@ -100,7 +101,7 @@ def plot_hybrid(t, x, q, q_t, p, y_ref=None, n_ref=500):
     ax.grid(True, alpha=0.3)
     fig_xy.tight_layout()
 
-    fig_t, axs = plt.subplots(5, 1, figsize=(10, 12), sharex=True)
+    fig_t, axs = plt.subplots(6, 1, figsize=(10, 12), sharex=True)
 
     # Discrete mode
     ax = axs[0]
@@ -109,8 +110,18 @@ def plot_hybrid(t, x, q, q_t, p, y_ref=None, n_ref=500):
     ax.set_title("Active mode")
     ax.grid(True, alpha=0.3)
 
-    # Position in time
+    # Automaton State
     ax = axs[1]
+    automaton = [int(qq.automaton) if qq.mode in (Mode.MOVING, Mode.WIPING) else np.nan # Outside of moving and wiping, my automaton is not active/useful
+           for qq in q]
+    ax.step(q_t, automaton, where="post", color="k")
+    ax.set_yticks([int(a) for a in Automaton], [a.name for a in Automaton], fontsize=8)
+    ax.set_ylim(-0.5, len(Automaton) - 0.5)
+    ax.set_title("Automaton state (during parking)")
+    ax.grid(True, alpha=0.3)
+
+    # Position in time
+    ax = axs[2]
     shade(ax, segments, colors)
     ax.plot(t, x[:, S.X], label="x")
     ax.plot(t, x[:, S.Y], label="y")
@@ -121,7 +132,7 @@ def plot_hybrid(t, x, q, q_t, p, y_ref=None, n_ref=500):
     ax.grid(True, alpha=0.3)
 
     # motor angular velocities (theta_l and theta_r derivatives)
-    ax = axs[2]
+    ax = axs[3]
     shade(ax, segments, colors)
     th_l = (x[:, S.DX] + x[:, S.DY]) / p.r_m
     th_r = (x[:, S.DX] - x[:, S.DY]) / p.r_m
@@ -133,7 +144,7 @@ def plot_hybrid(t, x, q, q_t, p, y_ref=None, n_ref=500):
     ax.grid(True, alpha=0.3)
 
     # Nozzle temperature
-    ax = axs[3]
+    ax = axs[4]
     shade(ax, segments, colors)
     ax.plot(t, x[:, S.TN], color="tab:red", label=r"T_n")
     if hasattr(p, "hot_temp"):
@@ -145,7 +156,7 @@ def plot_hybrid(t, x, q, q_t, p, y_ref=None, n_ref=500):
     ax.grid(True, alpha=0.3)
 
     # Filament remaining
-    ax = axs[4]
+    ax = axs[5]
     shade(ax, segments, colors)
     ax.plot(t, x[:, S.FIL], color="tab:green", label="Filament left")
     ax.set_ylabel("Filament")

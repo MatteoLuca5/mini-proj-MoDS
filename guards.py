@@ -1,7 +1,9 @@
 from utils import S, Q, Mode
 from resets import *
+from automaton import M, O, Automaton
 
 def make_events(x, q, p, p_func):
+    C_m = p.r_m / (p.r_m * p.r_m * p.m + 2 * p.J_m)
     match q.mode:
         case Mode.PRINTING:
             def g_print_color(t, x):
@@ -26,93 +28,26 @@ def make_events(x, q, p, p_func):
             g_saving.reset = reset_none
             return [g_saving]
         case Mode.MOVING:
-            def g_x0_wall(t, x):
-                return x[S.X]
-            g_x0_wall.terminal = True
-            g_x0_wall.direction = -1
-            g_x0_wall.target = Mode.MOVING_X0
-            g_x0_wall.reset = reset_hit_x0
-            def g_y0_wall(t, x):
-                return x[S.Y]
-            g_y0_wall.terminal = True
-            g_y0_wall.direction = -1
-            g_y0_wall.target = Mode.MOVING_Y0
-            g_y0_wall.reset = reset_hit_y0
-            def g_xd_wall(t, x):
-                return x[S.X] - p.dx
-            g_xd_wall.terminal = True
-            g_xd_wall.direction = 1
-            g_xd_wall.target = Mode.MOVING_XD
-            g_xd_wall.reset = reset_hit_xd
-            def g_yd_wall(t, x):
-                return x[S.Y] - p.dy
-            g_yd_wall.terminal = True
-            g_yd_wall.direction = 1
-            g_yd_wall.target = Mode.MOVING_YD
-            g_yd_wall.reset = reset_hit_yd
-            return [g_x0_wall, g_xd_wall, g_y0_wall, g_yd_wall]
-        case Mode.MOVING_X0:
-            def g_yd_wall(t, x):
-                return x[S.Y] - p.dy
-            g_yd_wall.terminal = True
-            g_yd_wall.direction = 1
-            g_yd_wall.target = Mode.MOVING_YD
-            g_yd_wall.reset = reset_hit_yd
-            def g_hit_origin(t, x):
-                return x[S.Y]
-            g_hit_origin.terminal = True
-            g_hit_origin.direction = -1
-            g_hit_origin.target = Mode.WIPING
-            g_hit_origin.reset = reset_wiping
-            return [g_hit_origin, g_yd_wall]
-        case Mode.MOVING_XD:
-            def g_yd_wall(t, x):
-                return x[S.Y] - p.dy
-            g_yd_wall.terminal = True
-            g_yd_wall.direction = 1
-            g_yd_wall.target = Mode.MOVING_YD
-            g_yd_wall.reset = reset_hit_yd
-            def g_y0_wall(t, x):
-                return x[S.Y]
-            g_y0_wall.terminal = True
-            g_y0_wall.direction = -1
-            g_y0_wall.target = Mode.MOVING_Y0
-            g_y0_wall.reset = reset_hit_y0
-            return [g_y0_wall, g_yd_wall]
-        case Mode.MOVING_Y0:
-            def g_hit_origin(t, x):
-                return x[S.X] + x[S.Y]
-            g_hit_origin.terminal = True
-            g_hit_origin.direction = -1
-            g_hit_origin.target = Mode.WIPING
-            g_hit_origin.reset = reset_wiping
-            def g_xd_wall(t, x):
-                return x[S.X] - p.dx
-            g_xd_wall.terminal = True
-            g_xd_wall.direction = 1
-            g_xd_wall.target = Mode.MOVING_XD
-            g_xd_wall.reset = reset_hit_xd
-            return [g_hit_origin, g_xd_wall]
-        case Mode.MOVING_YD:
-            def g_x0_wall(t, x):
-                return x[S.X]
-            g_x0_wall.terminal = True
-            g_x0_wall.direction = -1
-            g_x0_wall.target = Mode.MOVING_X0
-            g_x0_wall.reset = reset_hit_x0
-            def g_xd_wall(t, x):
-                return x[S.X] - p.dx
-            g_xd_wall.terminal = True
-            g_xd_wall.direction = 1
-            g_xd_wall.target = Mode.MOVING_XD
-            g_xd_wall.reset = reset_hit_xd
-            return [g_x0_wall, g_xd_wall]
+            cmd = q.automaton.command
+            next_state = q.automaton.step(cmd, O.ZERO)
+            if cmd == M.V:
+                def g_wall(t, x):
+                    return x[S.Y]
+                g_wall.reset = reset_hit_y0
+            else:
+                def g_wall(t, x):
+                    return x[S.X]
+                g_wall.reset = reset_hit_x0
+            g_wall.terminal = True
+            g_wall.direction = -1
+            g_wall.target = Q(Mode.WIPING, next_state) if next_state.accepting else Q(Mode.MOVING, next_state)
+            return [g_wall]
         case Mode.WIPING:
             def g_wiping(t, x):
                 return x[S.ELAPSED_TIME] - p.t_wipe
             g_wiping.terminal = True
             g_wiping.direction = 1
-            g_wiping.target = Mode.HEAT_OFF
+            g_wiping.target = Q(Mode.HEAT_OFF)
             g_wiping.reset = reset_heat_off
             return [g_wiping]
         case Mode.HEAT_OFF:

@@ -1,5 +1,6 @@
 from enum import IntEnum
 from dataclasses import dataclass
+from automaton import Automaton
 import numpy as np
 
 @dataclass
@@ -32,11 +33,11 @@ class Params:
     T_plate = 80.0
     T_fill = 200.0
     new_fil_amount = 5
-    alpha = 0.7
-    t_c = 2
+    alpha = 1.1
+    t_c = 20
     t_saving = 0.5
-    t_wipe = 0.2
-    t_loading = 0.5
+    t_wipe = 1.0
+    t_loading = 2.0
     t_return = 3
     cold_temp = 40
     hot_temp = 180
@@ -60,6 +61,7 @@ class Mode(IntEnum):
 @dataclass
 class Q:
     mode: Mode
+    automaton: Automaton = Automaton.q0
 
 class S(IntEnum):
     X = 0; DX = 1; I_X = 2;
@@ -67,7 +69,7 @@ class S(IntEnum):
     IN = 6; VC = 7; TN = 8;
     FIL = 9;
     PROG = 10;
-    TIME = 13; ELAPSED_TIME = 14;
+    TIME = 11; ELAPSED_TIME = 12;
 
 class U(IntEnum):
     X = 0; Y = 1;
